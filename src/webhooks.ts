@@ -1,7 +1,6 @@
 import express from 'express'
 import { WebhookRequest } from './server'
-import { stripe } from './lib/stripe'
-import type Stripe from 'stripe'
+import axios from 'axios'
 import { getPayloadClient } from './get-payload'
 import { Product } from './payload-types'
 import { Resend } from 'resend'
@@ -9,80 +8,58 @@ import { ReceiptEmailHtml } from './components/emails/ReceiptEmail'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export const stripeWebhookHandler = async (
+export const paystackWebhookHandler = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const webhookRequest = req as any as WebhookRequest
-  const body = webhookRequest.rawBody
-  const signature = req.headers['stripe-signature'] || ''
+  const event = req.body
 
-  let event
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET || ''
-    )
-  } catch (err) {
-    return res
-      .status(400)
-      .send(
-        `Webhook Error: ${
-          err instanceof Error
-            ? err.message
-            : 'Unknown Error'
-        }`
-      )
+  if (!event || !event.event) {
+    return res.status(400).send('Invalid webhook data')
   }
 
-  const session = event.data
-    .object as Stripe.Checkout.Session
+  // Handle payment successful event
+  if (event.event === 'charge.success') {
+    const metadata = event.data.metadata
 
-  if (
-    !session?.metadata?.userId ||
-    !session?.metadata?.orderId
-  ) {
-    return res
-      .status(400)
-      .send(`Webhook Error: No user present in metadata`)
-  }
+    if (!metadata?.userId || !metadata?.orderId) {
+      return res
+        .status(400)
+        .send(`Webhook Error: No user or order in metadata`)
+    }
 
-  if (event.type === 'checkout.session.completed') {
     const payload = await getPayloadClient()
 
     const { docs: users } = await payload.find({
       collection: 'users',
       where: {
         id: {
-          equals: session.metadata.userId,
+          equals: metadata.userId,
         },
       },
     })
 
     const [user] = users
 
-    if (!user)
-      return res
-        .status(404)
-        .json({ error: 'No such user exists.' })
+    if (!user) {
+      return res.status(404).json({ error: 'No such user exists.' })
+    }
 
     const { docs: orders } = await payload.find({
       collection: 'orders',
       depth: 2,
       where: {
         id: {
-          equals: session.metadata.orderId,
+          equals: metadata.orderId,
         },
       },
     })
 
     const [order] = orders
 
-    if (!order)
-      return res
-        .status(404)
-        .json({ error: 'No such order exists.' })
+    if (!order) {
+      return res.status(404).json({ error: 'No such order exists.' })
+    }
 
     await payload.update({
       collection: 'orders',
@@ -91,22 +68,21 @@ export const stripeWebhookHandler = async (
       },
       where: {
         id: {
-          equals: session.metadata.orderId,
+          equals: metadata.orderId,
         },
       },
     })
 
-    // send receipt
+    // Send receipt
     try {
       const data = await resend.emails.send({
         from: 'DigitalHippo <hello@joshtriedcoding.com>',
         to: [user.email],
-        subject:
-          'Thanks for your order! This is your receipt.',
+        subject: 'Thanks for your order! This is your receipt.',
         html: ReceiptEmailHtml({
           date: new Date(),
           email: user.email,
-          orderId: session.metadata.orderId,
+          orderId: metadata.orderId,
           products: order.products as Product[],
         }),
       })

@@ -4,9 +4,8 @@ import { nextApp, nextHandler } from './next-utils'
 import * as trpcExpress from '@trpc/server/adapters/express'
 import { appRouter } from './trpc'
 import { inferAsyncReturnType } from '@trpc/server'
-import bodyParser from 'body-parser'
 import { IncomingMessage } from 'http'
-import { stripeWebhookHandler } from './webhooks'
+import { paystackWebhookHandler } from './webhooks' // Updated import
 import nextBuild from 'next/dist/build'
 import path from 'path'
 import { PayloadRequest } from 'payload/types'
@@ -32,17 +31,8 @@ export type WebhookRequest = IncomingMessage & {
 }
 
 const start = async () => {
-  const webhookMiddleware = bodyParser.json({
-    verify: (req: WebhookRequest, _, buffer) => {
-      req.rawBody = buffer
-    },
-  })
-
-  app.post(
-    '/api/webhooks/stripe',
-    webhookMiddleware,
-    stripeWebhookHandler
-  )
+  // Updated webhook route to use Paystack and standard JSON parser
+  app.post('/api/webhooks/paystack', express.json(), paystackWebhookHandler)
 
   const payload = await getPayloadClient({
     initOptions: {
@@ -85,6 +75,7 @@ const start = async () => {
   })
 
   app.use('/cart', cartRouter)
+
   app.use(
     '/api/trpc',
     trpcExpress.createExpressMiddleware({
