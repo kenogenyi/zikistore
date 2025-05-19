@@ -33,6 +33,9 @@ const ProductListing = ({
     ({ value }) => value === product.category
   )?.label
 
+  type Image = {
+  image: string | { url?: string }
+  }
   const validUrls = product.images
     .map(({ image }) =>
       typeof image === 'string' ? image : image.url
