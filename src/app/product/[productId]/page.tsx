@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/utils'
 import { Check, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import type { Product } from '@/payload-types'
 
 interface PageProps {
   params: {
@@ -37,21 +38,30 @@ const Page = async ({ params }: PageProps) => {
       },
     },
   })
-
-  const [product] = products
-
-  if (!product) return notFound()
-
-  const label = PRODUCT_CATEGORIES.find(
-    ({ value }) => value === product.category
-  )?.label
-  
-  type Image = {
+// Define types before using them
+type ProductImage = {
   image: string | { url?: string }
 }
-  const validUrls = product.images
-    .map((img: any) => (typeof img.image === 'string' ? img.image : img.image?.url))
-    .filter(Boolean) as string[]
+
+const [product] = products as unknown as Product[]
+
+if (!product) return notFound()
+
+const label = PRODUCT_CATEGORIES.find(
+  ({ value }) => value === product.category
+)?.label
+
+const validUrls = product.images
+  .map((image) => {
+    if (typeof image.image === 'string') {
+      return image.image
+    } else if (typeof image.image === 'object' && image.image.url) {
+      return image.image.url
+    }
+    return null
+  })
+
+  const filteredUrls = validUrls.filter(Boolean) as string[]
 
   return (
     <MaxWidthWrapper className='bg-white'>
@@ -122,7 +132,7 @@ const Page = async ({ params }: PageProps) => {
           {/* Product images */}
           <div className='mt-10 lg:col-start-2 lg:row-span-2 lg:mt-0 lg:self-center'>
             <div className='aspect-square rounded-lg'>
-              <ImageSlider urls={validUrls} />
+              <ImageSlider urls={filteredUrls} />
             </div>
           </div>
 

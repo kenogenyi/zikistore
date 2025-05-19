@@ -41,7 +41,7 @@ const ThankYouPage = async ({
   const orderUserId =
     typeof order.user === 'string'
       ? order.user
-      : order.user.id
+      : (order.user as User).id
 
   if (orderUserId !== user?.id) {
     return redirect(
@@ -80,9 +80,9 @@ const ThankYouPage = async ({
                 Your order was processed and your assets are
                 available to download below. We&apos;ve sent
                 your receipt and order details to{' '}
-                {typeof order.user !== 'string' ? (
+                {typeof order.user === 'object' && order.user !== null && 'email' in order.user ? (
                   <span className='font-medium text-gray-900'>
-                    {order.user.email}
+                    {(order.user as User).email}
                   </span>
                 ) : null}
                 .
@@ -187,9 +187,9 @@ const ThankYouPage = async ({
               </div>
 
               <PaymentStatus
-                isPaid={order._isPaid}
+                isPaid={Boolean(order._isPaid)}
                 orderEmail={(order.user as User).email}
-                orderId={order.id}
+                orderId={String(order.id)}
               />
 
               <div className='mt-16 border-t border-gray-200 py-6 text-right'>
