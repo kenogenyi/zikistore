@@ -138,6 +138,3 @@ export interface PayloadMigration {
   updatedAt: string;
   createdAt: string;
 }
-
-
-}
