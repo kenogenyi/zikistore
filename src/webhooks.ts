@@ -12,7 +12,17 @@ export const paystackWebhookHandler = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const event = req.body
+  type PaystackEvent = {
+  data: {
+    metadata: {
+      orderId: string;
+      userId: string;
+    };
+  };
+  event: string;
+};
+
+const event = req.body as PaystackEvent
 
   if (!event || !event.event) {
     return res.status(400).send('Invalid webhook data')

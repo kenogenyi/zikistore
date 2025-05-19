@@ -35,7 +35,7 @@ export const paymentRouter = router({
       )
 
       const totalAmount = filteredProducts.reduce(
-        (sum, product) => sum + product.price,
+        (sum, product) => sum + Number(product.price ?? 0),
         0
       )
 
@@ -43,7 +43,7 @@ export const paymentRouter = router({
         collection: 'orders',
         data: {
           _isPaid: false,
-          products: filteredProducts.map((prod) => prod.id),
+          products: filteredProducts.map((prod) => String(prod.id)),
           user: user.id,
         },
       })
