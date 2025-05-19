@@ -25,8 +25,7 @@ const syncUser: AfterChangeHook<Product> = async ({
   })
 
   if (fullUser && typeof fullUser === 'object') {
-    const { products } = fullUser
-
+  const { products } = fullUser as { products?: (string | { id: string })[] };
     const allIDs = [
       ...(products?.map((product) =>
         typeof product === 'object' ? product.id : product

@@ -84,17 +84,16 @@ const event = req.body as PaystackEvent
     })
 
     // Send receipt
-    try {
-      const data = await resend.emails.send({
-        from: 'DigitalHippo <hello@joshtriedcoding.com>',
-        to: [user.email],
-        subject: 'Thanks for your order! This is your receipt.',
-        html: ReceiptEmailHtml({
-          date: new Date(),
-          email: user.email,
-          orderId: metadata.orderId,
-          products: order.products as Product[],
-        }),
+    try {const data = await resend.emails.send({
+  from: 'zikistore support <ogenyiken@gmail.com>',
+  to: [user.email as string],
+  subject: 'Thanks for your order! This is your receipt.',
+  html: ReceiptEmailHtml({
+    date: new Date(),
+    email: user.email as string,
+    orderId: metadata.orderId as string,
+    products: (order?.products ?? []) as Product[],
+  }),
       })
       res.status(200).json({ data })
     } catch (error) {
