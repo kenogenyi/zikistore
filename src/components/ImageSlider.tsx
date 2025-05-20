@@ -42,8 +42,8 @@ const ImageSlider = ({ urls }: ImageSliderProps) => {
     }
   }, [swiper, urls])
 
-  const activeStyles = 'active:scale-[0.97] grid opacity-100 hover:scale-105'
-  const inactiveStyles = 'hidden text-gray-400'
+  const activeStyles = 'active:scale-[0.97] grid opacity-100 hover:scale-105';
+  const inactiveStyles = 'hidden text-gray-400';
 
   return (
     <div className='group relative bg-zinc-100 aspect-square overflow-hidden'>
